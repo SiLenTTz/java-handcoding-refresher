@@ -1,0 +1,17 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Java
+target/
+build/
+out/
+.gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local notes
+.local/
