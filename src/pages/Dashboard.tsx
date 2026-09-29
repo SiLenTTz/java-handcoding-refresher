@@ -21,7 +21,7 @@ export function Dashboard() {
     <div className="space-y-8">
       <PageHeader title={`${greeting} 👋`} subtitle="Code nicht nur lesen – schreib ihn aus dem Kopf." />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <Stat label="Streak" value={`${streak(p.activeDays)}${streak(p.activeDays) > 0 ? ' 🔥' : ''}`} sub={`${p.activeDays.length} Lerntage insgesamt`} />
         <Stat label="Karten fällig" value={due} sub={`${fresh} neue verfügbar · ${allFlashcards.length} gesamt`} />
         <Stat label="Katas gelöst" value={`${solvedKatas(p)} / ${allKatas.length}`} />

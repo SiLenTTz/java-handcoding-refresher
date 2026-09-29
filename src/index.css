@@ -8,11 +8,19 @@
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overflow-wrap: break-word;
 }
 
 .prose pre {
   background: #0d1117;
   border: 1px solid rgb(39 39 42);
+  overflow-x: auto;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
 }
 
 .prose :where(code):not(:where(pre *))::before,
@@ -33,6 +41,13 @@ body {
 
 .cm-editor {
   font-size: 14px;
+}
+
+/* 16px keeps iOS Safari from zooming in when the editor gets focus. */
+@media (max-width: 640px) {
+  .cm-editor {
+    font-size: 16px;
+  }
 }
 
 .flip-enter {

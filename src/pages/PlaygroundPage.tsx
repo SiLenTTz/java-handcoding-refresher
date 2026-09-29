@@ -68,8 +68,10 @@ export function PlaygroundPage() {
         }
       />
       <div className="grid gap-5 xl:grid-cols-[3fr_2fr]">
-        <CodeEditor value={code} onChange={setCode} onRun={run} minHeight="600px" />
-        <div>
+        <div className="min-w-0">
+          <CodeEditor value={code} onChange={setCode} onRun={run} minHeight="clamp(280px,55vh,600px)" />
+        </div>
+        <div className="min-w-0">
           <RunResult result={result} error={error} />
         </div>
       </div>

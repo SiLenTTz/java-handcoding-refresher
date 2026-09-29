@@ -18,7 +18,7 @@ interface Props {
  * Java editor WITHOUT autocompletion – this is a handcoding trainer.
  * Cmd/Ctrl+Enter runs the code.
  */
-export function CodeEditor({ value, onChange, onRun, readOnly = false, minHeight = '420px' }: Props) {
+export function CodeEditor({ value, onChange, onRun, readOnly = false, minHeight = 'clamp(240px,45vh,420px)' }: Props) {
   const extensions = useMemo(
     () => [
       java(),

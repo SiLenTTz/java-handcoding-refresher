@@ -19,6 +19,27 @@ npm run dev
 
 Die App öffnet sich unter <http://127.0.0.1:5173>.
 
+## Am Handy lernen
+
+Die Oberfläche ist responsiv: Navigation als Drawer, Karteikarten, Quiz und Prüfung
+sind vollständig per Touch bedienbar, der Kata-Editor passt sich der Bildschirmhöhe an.
+
+Damit das Handy den Rechner erreicht, muss der Dev-Server im Netzwerk lauschen:
+
+```bash
+npm run dev:mobile
+```
+
+Vite gibt dann eine `Network:`-URL aus (z. B. `http://192.168.x.x:5173`) – die am Handy
+öffnen, Handy und Rechner im selben WLAN.
+
+> ⚠️ `dev:mobile` öffnet auch den Java-Runner (`/api/run`) fürs lokale Netz. Der führt
+> beliebigen Java-Code auf deinem Rechner aus – also nur in vertrauenswürdigen Netzen
+> starten, nie im offenen WLAN. Ohne diesen Befehl bleibt alles auf `127.0.0.1`.
+
+Zum reinen Lesen/Karteikarten/Quiz reicht auch `npm run build` + ein statisches Hosting –
+nur Katas und Playground brauchen den lokalen JDK-Runner.
+
 ## Was die App kann
 
 | Bereich | Inhalt |

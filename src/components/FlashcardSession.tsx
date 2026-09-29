@@ -93,16 +93,16 @@ export function FlashcardSession({ cards, showChapter = false }: { cards: WithCh
       </Card>
       <div className="flex justify-center gap-3">
         {!revealed ? (
-          <Button variant="primary" className="w-64" onClick={() => setRevealed(true)}>
-            Antwort zeigen <kbd className="text-xs opacity-60">Space</kbd>
+          <Button variant="primary" className="w-full py-3 sm:w-64 sm:py-2" onClick={() => setRevealed(true)}>
+            Antwort zeigen <kbd className="hidden text-xs opacity-60 sm:inline">Space</kbd>
           </Button>
         ) : (
           <>
-            <Button variant="danger" className="w-48" onClick={() => grade(false)}>
-              Nicht gewusst <kbd className="text-xs opacity-60">1</kbd>
+            <Button variant="danger" className="flex-1 py-3 sm:w-48 sm:flex-none sm:py-2" onClick={() => grade(false)}>
+              Nicht gewusst <kbd className="hidden text-xs opacity-60 sm:inline">1</kbd>
             </Button>
-            <Button variant="success" className="w-48" onClick={() => grade(true)}>
-              Gewusst <kbd className="text-xs opacity-60">2</kbd>
+            <Button variant="success" className="flex-1 py-3 sm:w-48 sm:flex-none sm:py-2" onClick={() => grade(true)}>
+              Gewusst <kbd className="hidden text-xs opacity-60 sm:inline">2</kbd>
             </Button>
           </>
         )}

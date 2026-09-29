@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useRef } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { allFlashcards } from '../content'
 import { exportProgress, importProgress, isDue, useProgress } from '../lib/progress'
 import { streak, today } from '../lib/dates'
@@ -16,10 +16,19 @@ const NAV = [
 
 export function Layout() {
   const progress = useProgress()
+  const location = useLocation()
   const fileInput = useRef<HTMLInputElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const dueCount = allFlashcards.filter((c) => progress.cards[c.key] && isDue(progress.cards[c.key])).length
   const openMistakes = progress.mistakes.filter((m) => !m.resolved).length
   const days = streak(progress.activeDays)
+
+  useEffect(() => setMenuOpen(false), [location.pathname, location.search])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => void (document.body.style.overflow = '')
+  }, [menuOpen])
 
   const download = () => {
     const blob = new Blob([exportProgress()], { type: 'application/json' })
@@ -39,7 +48,10 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 p-4">
+      {menuOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)} />}
+      <aside
+        className={`fixed top-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950 p-4 pt-[max(1rem,env(safe-area-inset-top))] transition-transform lg:sticky lg:z-auto lg:w-60 lg:translate-x-0 lg:pt-4 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
         <NavLink to="/" className="mb-6 flex items-center gap-2 px-2">
           <span className="text-2xl">☕</span>
           <div className="leading-tight">
@@ -54,7 +66,7 @@ export function Layout() {
               to={n.to}
               end={n.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'}`
+                `flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition lg:py-2 ${isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'}`
               }
             >
               <span>{n.icon}</span>
@@ -68,18 +80,18 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto space-y-3">
+        <div className="mt-auto space-y-3 pt-6">
           <div className="rounded-lg border border-zinc-800 p-3 text-center">
             <div className="text-2xl">{days > 0 ? '🔥' : '💤'}</div>
             <div className="text-sm font-semibold">{days} Tag{days === 1 ? '' : 'e'} Streak</div>
           </div>
           <div className="flex gap-2 text-xs">
-            <button onClick={download} className="flex-1 rounded-md border border-zinc-800 py-1.5 text-zinc-400 hover:text-zinc-200">
+            <button onClick={download} className="flex-1 rounded-md border border-zinc-800 py-2 text-zinc-400 hover:text-zinc-200">
               Export
             </button>
             <button
               onClick={() => fileInput.current?.click()}
-              className="flex-1 rounded-md border border-zinc-800 py-1.5 text-zinc-400 hover:text-zinc-200"
+              className="flex-1 rounded-md border border-zinc-800 py-2 text-zinc-400 hover:text-zinc-200"
             >
               Import
             </button>
@@ -93,11 +105,38 @@ export function Layout() {
           </div>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-8 py-8">
-        <div className="mx-auto max-w-6xl">
-          <Outlet />
-        </div>
-      </main>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-zinc-800 bg-zinc-950/95 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Menü öffnen"
+            className="rounded-lg px-3 py-2 text-xl text-zinc-300 hover:bg-zinc-900"
+          >
+            ☰
+          </button>
+          <NavLink to="/" className="flex min-w-0 items-center gap-2 font-bold">
+            <span>☕</span>
+            <span className="truncate">Java Refresher</span>
+          </NavLink>
+          <div className="ml-auto flex items-center gap-2 pr-1 text-sm text-zinc-400">
+            {dueCount > 0 && (
+              <NavLink to="/review" className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-bold text-zinc-950">
+                {dueCount} fällig
+              </NavLink>
+            )}
+            <span className="whitespace-nowrap">
+              {days > 0 ? '🔥' : '💤'} {days}
+            </span>
+          </div>
+        </header>
+
+        <main className="min-w-0 flex-1 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8">
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

@@ -48,7 +48,7 @@ export function ChapterPage() {
           <div className="text-sm text-zinc-500">
             Modul {chapter.module} · {MODULES[chapter.module]} · Kapitel {chapter.id}
           </div>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{chapter.title}</h1>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{chapter.title}</h1>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={status} />
@@ -65,12 +65,12 @@ export function ChapterPage() {
         </div>
       </div>
 
-      <div className="mb-6 flex gap-1 border-b border-zinc-800">
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-zinc-800">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm transition ${tab === t.id ? 'border-orange-500 text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm whitespace-nowrap transition sm:px-4 ${tab === t.id ? 'border-orange-500 text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
           >
             {t.label}
             {counts[t.id] !== null && <span className="ml-1.5 text-xs text-zinc-500">{counts[t.id]}</span>}
@@ -80,7 +80,7 @@ export function ChapterPage() {
 
       {tab === 'read' && (
         <div className="grid gap-8 lg:grid-cols-[1fr_200px]">
-          <article>
+          <article className="min-w-0">
             <Markdown>{chapter.markdown}</Markdown>
             <div className="mt-10 flex justify-between border-t border-zinc-800 pt-6">
               <Button

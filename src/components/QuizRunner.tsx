@@ -89,7 +89,7 @@ export function QuizRunner({ questions, mode, onFinish, showChapter = false, for
                 key={i}
                 disabled={locked}
                 onClick={() => setChosen(i)}
-                className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition ${style}`}
+                className={`flex w-full items-start gap-3 rounded-lg border px-3 py-3 text-left transition sm:px-4 ${style}`}
               >
                 <span className="mt-0.5 font-mono text-xs text-zinc-500">{i + 1}</span>
                 <Markdown className="prose-p:my-0 flex-1">{opt}</Markdown>
@@ -105,8 +105,8 @@ export function QuizRunner({ questions, mode, onFinish, showChapter = false, for
         )}
       </Card>
       <div className="flex justify-end">
-        <Button variant="primary" disabled={chosen === null} onClick={next}>
-          {index + 1 < questions.length ? 'Weiter' : 'Auswerten'} <kbd className="text-xs opacity-60">↵</kbd>
+        <Button variant="primary" className="w-full py-3 sm:w-auto sm:py-2" disabled={chosen === null} onClick={next}>
+          {index + 1 < questions.length ? 'Weiter' : 'Auswerten'} <kbd className="hidden text-xs opacity-60 sm:inline">↵</kbd>
         </Button>
       </div>
     </div>

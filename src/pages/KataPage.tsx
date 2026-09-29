@@ -116,7 +116,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card>
             <Markdown>{kata.description}</Markdown>
           </Card>
@@ -151,7 +151,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <CodeEditor value={code} onChange={setCode} onRun={runnable ? run : undefined} />
           <div className="flex flex-wrap items-center gap-2">
             {runnable ? (
