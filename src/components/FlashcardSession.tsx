@@ -43,7 +43,7 @@ export function FlashcardSession({ cards, showChapter = false }: { cards: WithCh
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!current || (e.target as HTMLElement).closest('input, textarea, .cm-editor')) return
-      if (e.key === ' ' && !revealed) {
+      if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !revealed) {
         e.preventDefault()
         setRevealed(true)
       } else if (revealed && (e.key === '1' || e.key === 'ArrowLeft')) grade(false)

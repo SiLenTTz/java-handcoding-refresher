@@ -1,117 +1,76 @@
-# Java Handcoding Refresher
+# ☕ Java Handcoding Refresher
 
-Ein projektbasiertes Lern-Repository, um modernes Java wieder **sicher von Hand** zu programmieren.
-
-## Ziel
-
-Dieses Repo trainiert dich auf:
-
-- Java Core
-- Collections
-- `Map<K,V>`
-- Streams
-- `map`, `filter`, `flatMap`, `reduce`
-- `Optional`
-- Records
-- DTO / Entity / Mapper
-- OOP & SOLID
-- Clean Code
-- Design Patterns
-- Spring Dependency Injection
-- Controller / Service / Repository
-- Spring Data
-- `Page`, `Slice`, `Pageable`
-- JPA / Hibernate
-- Transaktionen
-- Testing
-- Refactoring
-- Handcoding ohne KI-Unterstützung
-
-## Lernprinzip
-
-Jedes Kapitel folgt:
+Eine lokale Lern-Web-App, um modernes Java (21) und Spring Boot wieder **sicher von Hand** zu schreiben.
 
 ```text
-READ
-  ↓
-RECALL
-  ↓
-CODE
-  ↓
-REVIEW
-  ↓
-QUIZ
-  ↓
-REPEAT
+READ → RECALL → CODE → REVIEW → QUIZ → REPEAT
 ```
 
-Die wichtigste Regel:
+> Code nicht nur lesen. Schreib ihn regelmäßig komplett aus dem Kopf.
 
-> Code nicht nur lesen.  
-> Schreibe ihn regelmäßig komplett aus dem Kopf.
+## Starten
 
-## Empfohlener Ablauf
-
-1. `docs/chapters/` – Kapitel lesen
-2. `docs/cheatsheets/` – Syntax nachschlagen
-3. `docs/quizzes/` – Wissen testen
-4. `docs/coding-katas/` – Aufgaben ohne Hilfe lösen
-5. `progress/` – Schwächen protokollieren
-6. `docs/exams/` – Zwischen- und Abschlussprüfungen
-7. `agent/` – Coding-Agent als Tutor/Prüfer konfigurieren
-
-## Wichtige Schwerpunkte
-
-Besonders intensiv trainieren:
-
-- Streams
-- `Map`
-- DTO / Mapper
-- `Page` / `Slice`
-- `Optional`
-- `Collectors`
-- JPA / Hibernate
-- Clean Code
-- Refactoring
-
-## Git-Start
+Voraussetzungen: Node 20+ und ein JDK 21 im `PATH` (`java -version`).
 
 ```bash
-git init
-git add .
-git commit -m "Initial Java handcoding learning repo"
+npm install
+npm run dev
 ```
 
-## Coding-Regel
+Die App öffnet sich unter <http://127.0.0.1:5173>.
 
-Während Coding-Katas:
+## Was die App kann
 
-- keine KI
-- kein Copilot
-- kein Google
-- möglichst kein Autocomplete
-- erst selbst versuchen
-- danach Lösung vergleichen
+| Bereich | Inhalt |
+|---|---|
+| **Dashboard** | 25 Kapitel in 4 Modulen, Status pro Kapitel (UNKNOWN → MASTERED), Streak, „Heute dran“ |
+| **Kapitel** | Theorie · Karteikarten · Quiz (mit Erklärungen) · Katas |
+| **Katas** | Editor **ohne Autocomplete**, echte Tests gegen dein lokales JDK (`⌘↵`), Hints in Stufen, Lösung erst nach dem ersten Versuch |
+| **Wiederholen** | Karteikarten mit Leitner-System (Intervalle 0/1/2/4/8/16 Tage) |
+| **Prüfung** | Zufällige Fragen über alle/ausgewählte Module, 1 min pro Frage, Auswertung nach Kapitel |
+| **Fehlerlog** | Falsche Antworten landen automatisch hier, eigene Einträge mit Kategorie (SYNTAX, API, CONCEPT, …) |
+| **Playground** | Freies Java ausführen |
+| **Cheatsheets** | Master-Cheatsheet & Handcoding-Checkliste |
 
-## Repo-Struktur
+Der Fortschritt liegt im `localStorage` des Browsers. Über **Export/Import** in der Sidebar lässt er sich als JSON sichern.
+
+## Empfohlener Tagesablauf
+
+1. Fällige Karten wiederholen (5–10 min)
+2. Nächstes Kapitel lesen → Karteikarten → Quiz
+3. Katas des Kapitels lösen – erst ohne Hints
+4. Fehler notieren, am nächsten Tag wiederholen
+5. Jede Woche: Prüfung + 3 Level-4/5-Katas ohne Hilfe
+
+Coding-Regel für Katas: keine KI, kein Copilot, kein Google. Erst selbst versuchen, dann vergleichen.
+
+## Projektstruktur
 
 ```text
-java-handcoding-refresher/
-├── README.md
-├── LEARNING_PLAN.md
-├── CURRICULUM.md
-├── agent/
-│   ├── SYSTEM_PROMPT.md
-│   └── AGENT_USAGE.md
-├── docs/
-│   ├── chapters/
-│   ├── cheatsheets/
-│   ├── quizzes/
-│   ├── coding-katas/
-│   ├── exams/
-│   └── solutions/
-└── progress/
-    ├── KNOWLEDGE_TRACKER.md
-    ├── MISTAKE_LOG.md
-    └── SESSION_TEMPLATE.md
+docs/chapters/          Theorie pro Kapitel (Markdown, wird in der App gerendert)
+docs/cheatsheets/       Cheatsheets
+src/content/chapters/   Karteikarten, Quiz, Katas pro Kapitel (NN.ts)
+src/content/types.ts    Content-Schema
+src/                    React-App (pages, components, lib)
+server/runJava.ts       Kompiliert & testet Java (Single-File Source Launcher)
+scripts/check-katas.ts  Prüft, dass jede Musterlösung ihre Tests besteht
+agent/                  System-Prompt, um zusätzlich einen KI-Tutor zu nutzen
 ```
+
+## Inhalte erweitern
+
+Eine neue Kata in `src/content/chapters/NN.ts` ergänzen:
+
+- `given` – vorgegebene Typen (read-only)
+- `starter` – Startcode mit `// TODO`
+- `solution` – Referenzlösung
+- `tests` – Body einer `main`-Methode mit `check(name, expected, actual)`, `checkTrue(name, cond)`, `checkThrows(name, Ex.class, () -> …)`
+
+Danach prüfen:
+
+```bash
+npm run check:katas
+npm run typecheck
+```
+
+> Sicherheitshinweis: Der Runner führt beliebigen Java-Code auf deinem Rechner aus und lauscht deshalb nur auf `127.0.0.1`. Nicht öffentlich deployen.
