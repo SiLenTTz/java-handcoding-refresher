@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "highlight.js/styles/github-dark.css";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.prose pre {
+  background: #0d1117;
+  border: 1px solid rgb(39 39 42);
+}
+
+.prose :where(code):not(:where(pre *))::before,
+.prose :where(code):not(:where(pre *))::after {
+  content: none;
+}
+
+.prose :where(code):not(:where(pre *)) {
+  background: rgb(39 39 42);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.hljs {
+  background: transparent;
+}
+
+.cm-editor {
+  font-size: 14px;
+}
+
+.flip-enter {
+  animation: flip 0.25s ease-out;
+}
+
+@keyframes flip {
+  from {
+    transform: rotateX(80deg);
+    opacity: 0.2;
+  }
+  to {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}

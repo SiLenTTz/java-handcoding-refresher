@@ -15,3 +15,7 @@ Thumbs.db
 
 # Local notes
 .local/
+
+# Node
+node_modules/
+dist/
