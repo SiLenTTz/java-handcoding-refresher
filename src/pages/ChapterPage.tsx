@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { chapterById, chapters, key } from '../content'
-import { MODULES } from '../content/curriculum'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { chapterByUid, isTrackId, key, trackById, type Chapter } from '../content'
 import { addMistake, statusFromScore, statusRank, STATUSES, update, useProgress, type Status } from '../lib/progress'
 import { chapterStatus } from '../lib/stats'
 import { shuffle } from '../lib/dates'
@@ -19,19 +18,24 @@ const TABS = [
 type Tab = (typeof TABS)[number]['id']
 
 export function ChapterPage() {
-  const { id = '01' } = useParams()
+  const { track = '', id = '01' } = useParams()
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const p = useProgress()
-  const chapter = chapterById.get(id)
+  if (!isTrackId(track)) return <Navigate to="/tracks" replace />
+
+  const trackData = trackById.get(track)!
+  const chapter = chapterByUid.get(`${track}/${id}`)
   if (!chapter) return <div>Kapitel nicht gefunden.</div>
 
+  const base = `/t/${track}`
+  const uid = chapter.uid
   const tab = (params.get('tab') as Tab) ?? 'read'
   const setTab = (t: Tab) => setParams({ tab: t })
-  const idx = chapters.indexOf(chapter)
-  const prev = chapters[idx - 1]
-  const next = chapters[idx + 1]
-  const status = chapterStatus(p, id)
+  const idx = trackData.chapters.indexOf(chapter)
+  const prev = trackData.chapters[idx - 1]
+  const next = trackData.chapters[idx + 1]
+  const status = chapterStatus(p, uid)
   const { content } = chapter
 
   const counts: Record<Tab, number | null> = {
@@ -44,9 +48,9 @@ export function ChapterPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <div className="text-sm text-zinc-500">
-            Modul {chapter.module} · {MODULES[chapter.module]} · Kapitel {chapter.id}
+            {trackData.icon} {trackData.label} · Modul {chapter.module} · {trackData.modules[chapter.module]} · Kapitel {chapter.id}
           </div>
           <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{chapter.title}</h1>
         </div>
@@ -54,7 +58,7 @@ export function ChapterPage() {
           <StatusBadge status={status} />
           <select
             value={status}
-            onChange={(e) => update((d) => void (d.chapterStatus[id] = e.target.value as Status))}
+            onChange={(e) => update((d) => void (d.chapterStatus[uid] = e.target.value as Status))}
             className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm"
             title="Status manuell setzen"
           >
@@ -85,10 +89,11 @@ export function ChapterPage() {
             <div className="mt-10 flex justify-between border-t border-zinc-800 pt-6">
               <Button
                 variant="primary"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   update((d) => {
-                    d.chapterRead[id] = true
-                    if (!d.chapterStatus[id]) d.chapterStatus[id] = 'LEARNING'
+                    d.chapterRead[uid] = true
+                    if (!d.chapterStatus[uid]) d.chapterStatus[uid] = 'LEARNING'
                   })
                   setTab('cards')
                   window.scrollTo(0, 0)
@@ -103,17 +108,17 @@ export function ChapterPage() {
       )}
 
       {tab === 'cards' && (
-        <FlashcardSession cards={content.flashcards.map((item) => ({ chapter, item, key: key(id, item.id) }))} />
+        <FlashcardSession cards={content.flashcards.map((item) => ({ chapter, item, key: key(uid, item.id) }))} />
       )}
 
-      {tab === 'quiz' && <ChapterQuiz chapterId={id} onDone={() => setTab('katas')} />}
+      {tab === 'quiz' && <ChapterQuiz chapter={chapter} onDone={() => setTab('katas')} />}
 
       {tab === 'katas' && (
         <div className="grid gap-3 md:grid-cols-2">
           {content.katas.map((k) => {
-            const s = p.katas[key(id, k.id)]
+            const s = p.katas[key(uid, k.id)]
             return (
-              <Link key={k.id} to={`/kata/${id}/${k.id}`}>
+              <Link key={k.id} to={`${base}/kata/${chapter.id}/${k.id}`} className="min-w-0">
                 <Card className="h-full transition hover:border-zinc-600">
                   <div className="flex items-center justify-between">
                     <LevelBadge level={k.level} />
@@ -133,14 +138,14 @@ export function ChapterPage() {
 
       <div className="mt-12 flex justify-between text-sm">
         {prev ? (
-          <button onClick={() => navigate(`/chapter/${prev.id}`)} className="text-zinc-400 hover:text-white">
+          <button onClick={() => navigate(`${base}/chapter/${prev.id}`)} className="text-zinc-400 hover:text-white">
             ← {prev.id} {prev.title}
           </button>
         ) : (
           <span />
         )}
         {next && (
-          <button onClick={() => navigate(`/chapter/${next.id}`)} className="text-zinc-400 hover:text-white">
+          <button onClick={() => navigate(`${base}/chapter/${next.id}`)} className="text-zinc-400 hover:text-white">
             {next.id} {next.title} →
           </button>
         )}
@@ -166,13 +171,12 @@ function Toc({ markdown }: { markdown: string }) {
   )
 }
 
-function ChapterQuiz({ chapterId, onDone }: { chapterId: string; onDone: () => void }) {
-  const chapter = chapterById.get(chapterId)!
+function ChapterQuiz({ chapter, onDone }: { chapter: Chapter; onDone: () => void }) {
+  const uid = chapter.uid
   const p = useProgress()
   const [run, setRun] = useState(0)
   const [answers, setAnswers] = useState<QuizAnswer[] | null>(null)
-  const makeQuestions = () =>
-    shuffle(chapter.content.quiz).map((item) => ({ chapter, item, key: key(chapterId, item.id) }))
+  const makeQuestions = () => shuffle(chapter.content.quiz).map((item) => ({ chapter, item, key: key(uid, item.id) }))
   const [questions, setQuestions] = useState(makeQuestions)
 
   if (questions.length === 0) return <Card className="text-zinc-400">Noch kein Quiz.</Card>
@@ -180,17 +184,17 @@ function ChapterQuiz({ chapterId, onDone }: { chapterId: string; onDone: () => v
   const finish = (all: QuizAnswer[]) => {
     const score = Math.round((all.filter((a) => a.correct).length / all.length) * 100)
     update((d) => {
-      const prev = d.quiz[chapterId]
-      d.quiz[chapterId] = { best: Math.max(prev?.best ?? 0, score), last: score, date: new Date().toISOString() }
+      const prev = d.quiz[uid]
+      d.quiz[uid] = { best: Math.max(prev?.best ?? 0, score), last: score, date: new Date().toISOString() }
       const suggested = statusFromScore(score)
-      const current = d.chapterStatus[chapterId] ?? 'UNKNOWN'
+      const current = d.chapterStatus[uid] ?? 'UNKNOWN'
       // A new result can move the status down (honesty!) but MASTERED is only set manually.
-      if (current !== 'MASTERED' || statusRank(suggested) < statusRank('OK')) d.chapterStatus[chapterId] = suggested
+      if (current !== 'MASTERED' || statusRank(suggested) < statusRank('OK')) d.chapterStatus[uid] = suggested
     })
     all
       .filter((a) => !a.correct)
       .forEach((a) =>
-        addMistake({ chapterId, category: 'CONCEPT', source: 'quiz', text: a.question.item.prompt.split('\n')[0] }),
+        addMistake({ chapterId: uid, category: 'CONCEPT', source: 'quiz', text: a.question.item.prompt.split('\n')[0] }),
       )
     setAnswers(all)
   }
@@ -203,12 +207,12 @@ function ChapterQuiz({ chapterId, onDone }: { chapterId: string; onDone: () => v
         <Card className="text-center">
           <div className="text-5xl font-bold">{score}%</div>
           <div className="mt-1 text-zinc-400">
-            {correct} von {answers.length} richtig · Bestwert {p.quiz[chapterId]?.best ?? score}%
+            {correct} von {answers.length} richtig · Bestwert {p.quiz[uid]?.best ?? score}%
           </div>
           <div className="mt-3">
             <StatusBadge status={statusFromScore(score)} />
           </div>
-          <div className="mt-5 flex justify-center gap-2">
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <Button
               onClick={() => {
                 setAnswers(null)

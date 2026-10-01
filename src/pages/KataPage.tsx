@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { chapterById, key } from '../content'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { chapterByUid, isTrackId, key, type TrackId } from '../content'
 import { update, useProgress, type KataState } from '../lib/progress'
-import { runJava, type RunResponse } from '../lib/api'
+import { runCode, type RunResponse } from '../lib/api'
 import { formatDuration } from '../lib/dates'
 import { CodeEditor } from '../components/CodeEditor'
-import { JavaBlock, Markdown } from '../components/Markdown'
+import { Markdown } from '../components/Markdown'
 import { RunResult } from '../components/RunResult'
 import { MistakeForm } from '../components/MistakeForm'
 import { Button, Card, LevelBadge } from '../components/ui'
@@ -18,19 +18,27 @@ const emptyState = (starter: string): KataState => ({
   hintsShown: 0,
 })
 
+/** Snippet in the language of the current track (read-only). */
+function Snippet({ code, lang }: { code: string; lang: string }) {
+  return <Markdown>{'```' + lang + '\n' + code.trim() + '\n```'}</Markdown>
+}
+
 export function KataPage() {
-  const { chapterId = '', kataId = '' } = useParams()
-  const chapter = chapterById.get(chapterId)
+  const { track = '', chapterId = '', kataId = '' } = useParams()
+  if (!isTrackId(track)) return <Navigate to="/tracks" replace />
+
+  const chapter = chapterByUid.get(`${track}/${chapterId}`)
   const kata = chapter?.content.katas.find((k) => k.id === kataId)
   if (!chapter || !kata) return <div>Kata nicht gefunden.</div>
   // Remount per kata so local editor state resets.
-  return <KataView key={`${chapterId}/${kataId}`} chapterId={chapterId} kataId={kataId} />
+  return <KataView key={`${track}/${chapterId}/${kataId}`} track={track} chapterId={chapterId} kataId={kataId} />
 }
 
-function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) {
-  const chapter = chapterById.get(chapterId)!
+function KataView({ track, chapterId, kataId }: { track: TrackId; chapterId: string; kataId: string }) {
+  const chapter = chapterByUid.get(`${track}/${chapterId}`)!
   const kata = chapter.content.katas.find((k) => k.id === kataId)!
-  const kataKey = key(chapterId, kataId)
+  const kataKey = key(chapter.uid, kataId)
+  const base = `/t/${track}`
   const p = useProgress()
   const saved = p.katas[kataKey] ?? emptyState(kata.starter)
   const runnable = !!kata.tests
@@ -75,7 +83,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
     setRunning(true)
     setError(null)
     try {
-      const res = await runJava({ code: codeRef.current, given: kata.given, tests: kata.tests })
+      const res = await runCode({ language: track, code: codeRef.current, given: kata.given, tests: kata.tests })
       setResult(res)
       const elapsed = Date.now() - started
       patch((s) => {
@@ -91,7 +99,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
     } finally {
       setRunning(false)
     }
-  }, [running, kata.given, kata.tests, patch, started])
+  }, [running, track, kata.given, kata.tests, patch, started])
 
   const katas = chapter.content.katas
   const nextKata = katas[katas.indexOf(kata) + 1]
@@ -100,8 +108,8 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link to={`/chapter/${chapterId}?tab=katas`} className="text-sm text-orange-400 hover:underline">
+        <div className="min-w-0">
+          <Link to={`${base}/chapter/${chapterId}?tab=katas`} className="text-sm text-orange-400 hover:underline">
             ← {chapter.id} · {chapter.title}
           </Link>
           <h1 className="mt-1 flex items-center gap-3 text-2xl font-bold">
@@ -123,7 +131,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
           {kata.given && (
             <Card>
               <div className="mb-2 text-xs tracking-wide text-zinc-500 uppercase">Gegeben (read-only)</div>
-              <JavaBlock code={kata.given} />
+              <Snippet code={kata.given} lang={chapter.track.codeLang} />
             </Card>
           )}
           <Card>
@@ -152,15 +160,16 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
         </div>
 
         <div className="min-w-0 space-y-4">
-          <CodeEditor value={code} onChange={setCode} onRun={runnable ? run : undefined} />
+          <CodeEditor value={code} language={track} onChange={setCode} onRun={runnable ? run : undefined} />
           <div className="flex flex-wrap items-center gap-2">
             {runnable ? (
-              <Button variant="primary" onClick={run} disabled={running}>
-                {running ? '⏳ Kompiliere…' : '▶ Tests ausführen'} <kbd className="text-xs opacity-60">⌘↵</kbd>
+              <Button variant="primary" className="w-full sm:w-auto" onClick={run} disabled={running}>
+                {running ? '⏳ Kompiliere…' : '▶ Tests ausführen'} <kbd className="hidden text-xs opacity-60 sm:inline">⌘↵</kbd>
               </Button>
             ) : (
               <Button
                 variant="primary"
+                className="w-full sm:w-auto"
                 onClick={() =>
                   patch((s) => {
                     s.code = code
@@ -194,7 +203,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
               📓 Fehler notieren
             </Button>
             {nextKata && (
-              <Link to={`/kata/${chapterId}/${nextKata.id}`} className="ml-auto">
+              <Link to={`${base}/kata/${chapterId}/${nextKata.id}`} className="ml-auto">
                 <Button variant="ghost">Nächste Kata →</Button>
               </Link>
             )}
@@ -202,7 +211,13 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
 
           {showMistakeForm && (
             <Card>
-              <MistakeForm chapterId={chapterId} source="kata" prefill={`${kata.title}: `} onSaved={() => setShowMistakeForm(false)} />
+              <MistakeForm
+                track={track}
+                chapterId={chapter.uid}
+                source="kata"
+                prefill={`${kata.title}: `}
+                onSaved={() => setShowMistakeForm(false)}
+              />
             </Card>
           )}
 
@@ -220,7 +235,7 @@ function KataView({ chapterId, kataId }: { chapterId: string; kataId: string }) 
                   </div>
                 )}
               </div>
-              <JavaBlock code={kata.solution} />
+              <Snippet code={kata.solution} lang={chapter.track.codeLang} />
               <p className="mt-2 text-xs text-zinc-500">
                 Vergleiche Naming, API-Wahl, Edge Cases. Dann: Lösung verbergen und aus dem Kopf nochmal schreiben.
               </p>

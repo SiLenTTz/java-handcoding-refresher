@@ -80,7 +80,10 @@ export function FlashcardSession({ cards, showChapter = false }: { cards: WithCh
       </div>
       <Card key={current.key + String(revealed)} className="flip-enter min-h-72">
         {showChapter && (
-          <Link to={`/chapter/${current.chapter.id}`} className="text-xs text-orange-400 hover:underline">
+          <Link
+            to={`/t/${current.chapter.track.id}/chapter/${current.chapter.id}`}
+            className="text-xs text-orange-400 hover:underline"
+          >
             {current.chapter.id} · {current.chapter.title}
           </Link>
         )}

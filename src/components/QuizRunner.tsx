@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { WithChapter } from '../content'
 import type { QuizQuestion } from '../content/types'
-import { Markdown, JavaBlock } from './Markdown'
+import { Markdown } from './Markdown'
 import { Button, Card, ProgressBar } from './ui'
 
 export interface QuizAnswer {
@@ -10,6 +10,13 @@ export interface QuizAnswer {
   chosen: number
   correct: boolean
 }
+
+/** Snippet in the language of the chapter's track. */
+function Snippet({ code, lang }: { code: string; lang: string }) {
+  return <Markdown>{'```' + lang + '\n' + code.trim() + '\n```'}</Markdown>
+}
+
+const chapterLink = (q: WithChapter<QuizQuestion>) => `/t/${q.chapter.track.id}/chapter/${q.chapter.id}`
 
 interface Props {
   questions: WithChapter<QuizQuestion>[]
@@ -68,7 +75,7 @@ export function QuizRunner({ questions, mode, onFinish, showChapter = false, for
         <Markdown className="text-lg">{q.item.prompt}</Markdown>
         {q.item.code && (
           <div className="mt-3">
-            <JavaBlock code={q.item.code} />
+            <Snippet code={q.item.code} lang={q.chapter.track.codeLang} />
           </div>
         )}
         <div className="mt-5 space-y-2">
@@ -121,11 +128,11 @@ export function QuizReview({ answers }: { answers: QuizAnswer[] }) {
       <h3 className="font-semibold">Falsch beantwortet ({wrong.length})</h3>
       {wrong.map((a) => (
         <Card key={a.question.key}>
-          <Link to={`/chapter/${a.question.chapter.id}`} className="text-xs text-orange-400 hover:underline">
+          <Link to={chapterLink(a.question)} className="text-xs text-orange-400 hover:underline">
             {a.question.chapter.id} · {a.question.chapter.title}
           </Link>
           <Markdown className="mt-1">{a.question.item.prompt}</Markdown>
-          {a.question.item.code && <JavaBlock code={a.question.item.code} />}
+          {a.question.item.code && <Snippet code={a.question.item.code} lang={a.question.chapter.track.codeLang} />}
           <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
             <div className="rounded-lg border border-rose-800 bg-rose-950/30 p-2">
               <div className="text-xs text-rose-400">Deine Antwort</div>

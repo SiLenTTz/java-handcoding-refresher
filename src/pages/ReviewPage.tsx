@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { allFlashcards } from '../content'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { allFlashcards, inTrack, isTrackId, trackById } from '../content'
 import { useProgress } from '../lib/progress'
 import { shuffle } from '../lib/dates'
 import { dueCards, newCards } from '../lib/stats'
@@ -11,10 +11,18 @@ const NEW_PER_SESSION = 15
 
 export function ReviewPage() {
   const p = useProgress()
+  const { track = '' } = useParams()
   const [session, setSession] = useState<typeof allFlashcards | null>(null)
-  const due = dueCards(p)
-  const fresh = newCards(p)
-  const boxes = [0, 1, 2, 3, 4, 5].map((b) => Object.values(p.cards).filter((c) => c.box === b).length)
+  if (!isTrackId(track)) return <Navigate to="/tracks" replace />
+
+  const trackData = trackById.get(track)!
+  const cards = inTrack(allFlashcards, track)
+  const due = dueCards(p, track)
+  const fresh = newCards(p, track)
+  const trackKeys = new Set(cards.map((c) => c.key))
+  const boxes = [0, 1, 2, 3, 4, 5].map(
+    (b) => Object.entries(p.cards).filter(([k, c]) => c.box === b && trackKeys.has(k)).length,
+  )
 
   if (session) {
     return (
@@ -34,7 +42,10 @@ export function ReviewPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Wiederholen" subtitle="Leitner-System: gewusst → längeres Intervall, nicht gewusst → zurück auf Box 0." />
+      <PageHeader
+        title={`${trackData.icon} Wiederholen`}
+        subtitle="Leitner-System: gewusst → längeres Intervall, nicht gewusst → zurück auf Box 0."
+      />
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <div className="text-4xl font-bold">{due.length}</div>
@@ -55,9 +66,9 @@ export function ReviewPage() {
           </Button>
         </Card>
         <Card>
-          <div className="text-4xl font-bold">{allFlashcards.length}</div>
+          <div className="text-4xl font-bold">{cards.length}</div>
           <div className="text-zinc-400">Karten insgesamt</div>
-          <Button className="mt-4 w-full" onClick={() => setSession(shuffle(allFlashcards).slice(0, 25))}>
+          <Button className="mt-4 w-full" disabled={!cards.length} onClick={() => setSession(shuffle(cards).slice(0, 25))}>
             🎲 25 zufällige (Cram)
           </Button>
         </Card>
@@ -66,7 +77,7 @@ export function ReviewPage() {
         <div className="mb-3 text-sm font-semibold">Leitner-Boxen</div>
         <div className="flex items-end gap-3">
           {boxes.map((n, i) => (
-            <div key={i} className="flex-1 text-center">
+            <div key={i} className="min-w-0 flex-1 text-center">
               <div className="mx-auto flex h-24 items-end justify-center">
                 <div
                   className="w-full rounded-t bg-gradient-to-t from-orange-700 to-orange-400"
@@ -81,7 +92,11 @@ export function ReviewPage() {
       </Card>
       {fresh.length === 0 && due.length === 0 && (
         <Card className="text-zinc-400">
-          Noch nichts zu tun. Lies ein <Link to="/" className="text-orange-400 hover:underline">Kapitel</Link> – danach tauchen seine Karten hier auf.
+          Noch nichts zu tun. Lies ein{' '}
+          <Link to={`/t/${track}`} className="text-orange-400 hover:underline">
+            Kapitel
+          </Link>{' '}
+          – danach tauchen seine Karten hier auf.
         </Card>
       )}
     </div>

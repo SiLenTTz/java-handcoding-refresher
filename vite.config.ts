@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { javaRunnerPlugin } from './server/javaRunnerPlugin'
+import { runnerPlugin } from './server/runnerPlugin'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), javaRunnerPlugin()],
+  plugins: [react(), tailwindcss(), runnerPlugin()],
   server: { host: '127.0.0.1', port: 5173 },
   preview: { host: '127.0.0.1', port: 4173 },
 })

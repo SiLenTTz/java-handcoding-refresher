@@ -6,8 +6,26 @@ export function RunResult({ result, error }: { result: RunResponse | null; error
   }
   if (!result) return null
 
+  if (result.phase === 'unavailable') {
+    return (
+      <div className="space-y-2 rounded-lg border border-amber-800 bg-amber-950/40 p-3 text-sm text-amber-200">
+        <div className="font-semibold">🛠️ Toolchain nicht installiert</div>
+        <p className="text-amber-200/80">
+          Auf diesem Rechner fehlt der Compiler bzw. die Laufzeit für diese Sprache. Installiere sie und lade die Seite
+          neu – bis dahin kannst du den Code schreiben und mit der Lösung vergleichen.
+        </p>
+        {result.stderr && (
+          <pre className="max-h-64 overflow-auto rounded-lg bg-zinc-900 p-3 font-mono text-xs whitespace-pre-wrap text-amber-100">
+            {result.stderr}
+          </pre>
+        )}
+      </div>
+    )
+  }
+
   const passed = result.tests.filter((t) => t.passed).length
   const headline = {
+    unavailable: '🛠️ Toolchain nicht installiert',
     compile: '🧱 Compile-Fehler',
     runtime: '💥 Laufzeitfehler',
     timeout: '⏱️ Timeout (Endlosschleife?)',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { chapterById } from '../content'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { chapterByUid, isTrackId, trackById } from '../content'
 import { MISTAKE_CATEGORIES, update, useProgress } from '../lib/progress'
 import { Markdown } from '../components/Markdown'
 import { MistakeForm } from '../components/MistakeForm'
@@ -8,12 +8,18 @@ import { Button, Card, PageHeader } from '../components/ui'
 
 export function MistakesPage() {
   const p = useProgress()
+  const { track = '' } = useParams()
   const [showResolved, setShowResolved] = useState(false)
   const [adding, setAdding] = useState(false)
-  const list = p.mistakes.filter((m) => showResolved || !m.resolved)
+  if (!isTrackId(track)) return <Navigate to="/tracks" replace />
+
+  const trackData = trackById.get(track)!
+  const base = `/t/${track}`
+  const mine = p.mistakes.filter((m) => m.chapterId.startsWith(`${track}/`))
+  const list = mine.filter((m) => showResolved || !m.resolved)
 
   const byChapter = Object.entries(
-    p.mistakes
+    mine
       .filter((m) => !m.resolved)
       .reduce<Record<string, number>>((acc, m) => ({ ...acc, [m.chapterId]: (acc[m.chapterId] ?? 0) + 1 }), {}),
   ).sort((a, b) => b[1] - a[1])
@@ -21,7 +27,7 @@ export function MistakesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Fehlerlog"
+        title={`${trackData.icon} Fehlerlog`}
         subtitle="Falsche Quizantworten landen automatisch hier. Erledigt markieren, wenn du es sicher kannst."
         actions={
           <Button variant="primary" onClick={() => setAdding(!adding)}>
@@ -31,20 +37,20 @@ export function MistakesPage() {
       />
       {adding && (
         <Card>
-          <MistakeForm onSaved={() => setAdding(false)} />
+          <MistakeForm track={track} onSaved={() => setAdding(false)} />
         </Card>
       )}
       {byChapter.length > 0 && (
         <Card>
           <div className="mb-2 text-sm font-semibold">Wiederkehrende Schwächen</div>
           <div className="flex flex-wrap gap-2">
-            {byChapter.map(([id, n]) => (
+            {byChapter.map(([uid, n]) => (
               <Link
-                key={id}
-                to={`/chapter/${id}`}
+                key={uid}
+                to={`${base}/chapter/${uid.split('/')[1]}`}
                 className="rounded-full border border-zinc-700 px-3 py-1 text-sm hover:border-orange-500"
               >
-                {id} {chapterById.get(id)?.title} <span className="text-rose-400">×{n}</span>
+                {uid.split('/')[1]} {chapterByUid.get(uid)?.title} <span className="text-rose-400">×{n}</span>
               </Link>
             ))}
           </div>
@@ -58,11 +64,11 @@ export function MistakesPage() {
         {list.map((m) => (
           <Card key={m.id} className={`p-4 ${m.resolved ? 'opacity-50' : ''}`}>
             <div className="flex items-start gap-4">
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                   <span>{m.date}</span>
-                  <Link to={`/chapter/${m.chapterId}`} className="text-orange-400 hover:underline">
-                    {m.chapterId} {chapterById.get(m.chapterId)?.title}
+                  <Link to={`${base}/chapter/${m.chapterId.split('/')[1]}`} className="text-orange-400 hover:underline">
+                    {m.chapterId.split('/')[1]} {chapterByUid.get(m.chapterId)?.title}
                   </Link>
                   <span>· {m.source}</span>
                   <select

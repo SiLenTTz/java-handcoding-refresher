@@ -45,10 +45,13 @@ export interface ExamResult {
   score: number
   total: number
   durationMs: number
+  track?: string
 }
 
 export interface Progress {
-  version: 1
+  version: 2
+  /** Track the learner is currently working in. */
+  activeTrack: string
   chapterStatus: Record<string, Status>
   chapterRead: Record<string, boolean>
   quiz: Record<string, QuizResult>
@@ -57,13 +60,14 @@ export interface Progress {
   mistakes: Mistake[]
   exams: ExamResult[]
   activeDays: string[]
-  playground: string
+  playground: Record<string, string>
 }
 
 const STORAGE_KEY = 'jhr-progress-v1'
 
 const initial = (): Progress => ({
-  version: 1,
+  version: 2,
+  activeTrack: 'java',
   chapterStatus: {},
   chapterRead: {},
   quiz: {},
@@ -72,13 +76,34 @@ const initial = (): Progress => ({
   mistakes: [],
   exams: [],
   activeDays: [],
-  playground: '',
+  playground: {},
 })
+
+const prefixKeys = <T>(record: Record<string, T>, prefix: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(record ?? {}).map(([k, v]) => [`${prefix}/${k}`, v]))
+
+/** v1 stored Java-only progress under bare chapter ids like `07` or `07/k1`. */
+function migrate(raw: Record<string, unknown>): Progress {
+  if (raw.version === 2) return { ...initial(), ...(raw as unknown as Progress) }
+  const old = raw as unknown as Omit<Progress, 'version' | 'activeTrack' | 'playground'> & { playground?: string }
+  return {
+    ...initial(),
+    chapterStatus: prefixKeys(old.chapterStatus, 'java'),
+    chapterRead: prefixKeys(old.chapterRead, 'java'),
+    quiz: prefixKeys(old.quiz, 'java'),
+    cards: prefixKeys(old.cards, 'java'),
+    katas: prefixKeys(old.katas, 'java'),
+    mistakes: (old.mistakes ?? []).map((m) => ({ ...m, chapterId: `java/${m.chapterId}` })),
+    exams: old.exams ?? [],
+    activeDays: old.activeDays ?? [],
+    playground: old.playground ? { java: old.playground } : {},
+  }
+}
 
 function load(): Progress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? { ...initial(), ...JSON.parse(raw) } : initial()
+    return raw ? migrate(JSON.parse(raw)) : initial()
   } catch {
     return initial()
   }
@@ -111,12 +136,19 @@ export function useProgress(): Progress {
   )
 }
 
+export const loadProgress = (): Progress => state
+
+export function setActiveTrack(track: string) {
+  if (state.activeTrack === track) return
+  update((p) => void (p.activeTrack = track), { activity: false })
+}
+
 export function exportProgress(): string {
   return JSON.stringify(state, null, 2)
 }
 
 export function importProgress(json: string) {
-  commit({ ...initial(), ...JSON.parse(json) })
+  commit(migrate(JSON.parse(json)))
 }
 
 export function resetProgress() {

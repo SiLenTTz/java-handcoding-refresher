@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { allKatas } from '../content'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { allKatas, inTrack, isTrackId, trackById } from '../content'
 import { useProgress } from '../lib/progress'
 import { Button, Card, LevelBadge, PageHeader } from '../components/ui'
 
@@ -9,11 +9,16 @@ type Filter = 'all' | 'open' | 'solved'
 export function KatasPage() {
   const p = useProgress()
   const navigate = useNavigate()
+  const { track = '' } = useParams()
   const [filter, setFilter] = useState<Filter>('open')
   const [level, setLevel] = useState(0)
   const [runnableOnly, setRunnableOnly] = useState(false)
+  if (!isTrackId(track)) return <Navigate to="/tracks" replace />
 
-  const list = allKatas.filter((k) => {
+  const trackData = trackById.get(track)!
+  const base = `/t/${track}`
+
+  const list = inTrack(allKatas, track).filter((k) => {
     const solved = p.katas[k.key]?.solved
     if (filter === 'open' && solved) return false
     if (filter === 'solved' && !solved) return false
@@ -24,13 +29,13 @@ export function KatasPage() {
 
   const random = () => {
     const pick = list[Math.floor(Math.random() * list.length)]
-    if (pick) navigate(`/kata/${pick.chapter.id}/${pick.item.id}`)
+    if (pick) navigate(`${base}/kata/${pick.chapter.id}/${pick.item.id}`)
   }
 
   return (
     <div>
       <PageHeader
-        title="Katas"
+        title={`${trackData.icon} Katas`}
         subtitle="Kleine Aufgaben, aus dem Kopf gelöst. Autocomplete ist bewusst aus."
         actions={
           <Button variant="primary" onClick={random} disabled={!list.length}>
@@ -66,10 +71,10 @@ export function KatasPage() {
         {list.map((k) => {
           const s = p.katas[k.key]
           return (
-            <Link key={k.key} to={`/kata/${k.chapter.id}/${k.item.id}`}>
+            <Link key={k.key} to={`${base}/kata/${k.chapter.id}/${k.item.id}`} className="min-w-0">
               <Card className="h-full p-4 transition hover:border-zinc-600">
-                <div className="flex items-center justify-between text-xs text-zinc-500">
-                  <span>
+                <div className="flex items-center justify-between gap-2 text-xs text-zinc-500">
+                  <span className="truncate">
                     {k.chapter.id} · {k.chapter.title}
                   </span>
                   <LevelBadge level={k.item.level} />
@@ -83,6 +88,11 @@ export function KatasPage() {
             </Link>
           )
         })}
+        {list.length === 0 && (
+          <Card className="text-zinc-400">
+            Keine Katas für diesen Filter. Für {trackData.label} sind {inTrack(allKatas, track).length} Katas angelegt.
+          </Card>
+        )}
       </div>
     </div>
   )

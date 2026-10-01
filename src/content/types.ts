@@ -60,3 +60,17 @@ export interface ChapterContent {
   quiz: QuizQuestion[]
   katas: Kata[]
 }
+
+export interface ChapterMeta {
+  id: string
+  title: string
+  /** Key into `Curriculum.modules` */
+  module: string
+  /** Markdown file name inside docs/<track>/chapters */
+  file: string
+}
+
+export interface Curriculum {
+  modules: Record<string, string>
+  chapters: ChapterMeta[]
+}

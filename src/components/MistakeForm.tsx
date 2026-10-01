@@ -1,22 +1,26 @@
 import { useState } from 'react'
 import { addMistake, MISTAKE_CATEGORIES, type MistakeCategory, type Mistake } from '../lib/progress'
-import { chapters } from '../content'
+import { trackById, type TrackId } from '../content'
 import { Button } from './ui'
 
 export function MistakeForm({
+  track,
   chapterId,
   source = 'manual',
   prefill = '',
   onSaved,
 }: {
+  track: TrackId
+  /** Chapter uid, e.g. `java/07`. Hides the chapter picker when set. */
   chapterId?: string
   source?: Mistake['source']
   prefill?: string
   onSaved?: () => void
 }) {
+  const chapters = trackById.get(track)!.chapters
   const [text, setText] = useState(prefill)
   const [category, setCategory] = useState<MistakeCategory>('API')
-  const [chapter, setChapter] = useState(chapterId ?? '01')
+  const [chapter, setChapter] = useState(chapterId ?? chapters[0]?.uid ?? `${track}/01`)
 
   return (
     <form
@@ -44,7 +48,7 @@ export function MistakeForm({
             className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm"
           >
             {chapters.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.uid} value={c.uid}>
                 {c.id} {c.title}
               </option>
             ))}
