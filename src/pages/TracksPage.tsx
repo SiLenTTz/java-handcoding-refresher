@@ -34,10 +34,16 @@ export function TracksPage() {
                     <span className="text-2xl">{t.icon}</span>
                     <span className="text-lg font-semibold">{t.label}</span>
                   </div>
-                  {runner === false && (
-                    <span className="rounded-md border border-amber-800 bg-amber-950 px-2 py-0.5 text-[11px] text-amber-300">
-                      kein Runner
+                  {!t.runnable ? (
+                    <span className="rounded-md border border-sky-800 bg-sky-950 px-2 py-0.5 text-[11px] text-sky-300">
+                      Schreiben &amp; vergleichen
                     </span>
+                  ) : (
+                    runner === false && (
+                      <span className="rounded-md border border-amber-800 bg-amber-950 px-2 py-0.5 text-[11px] text-amber-300">
+                        kein Runner
+                      </span>
+                    )
                   )}
                 </div>
                 <p className="mt-2 text-sm text-zinc-400">{t.blurb}</p>
@@ -68,12 +74,16 @@ export function TracksPage() {
           )
         })}
       </div>
-      {available && Object.values(available).some((v) => !v) && (
+      {available && tracks.some((t) => t.runnable && available[t.id] === false) && (
         <Card className="mt-6 text-sm text-zinc-400">
           Für Sprachen ohne Runner fehlt die Toolchain auf diesem Rechner. Katas lassen sich dann schreiben und mit der
           Lösung vergleichen, aber nicht ausführen.
         </Card>
       )}
+      <Card className="mt-3 text-sm text-zinc-400">
+        SPS-Sprachen (SCL, AWL, FUP, KOP) haben keinen lokalen Compiler – FUP und KOP sind zudem grafisch. Diese Katas
+        schreibst du von Hand und vergleichst sie anschließend mit der Musterlösung.
+      </Card>
     </div>
   )
 }

@@ -9,18 +9,29 @@ import { isAvailable, runCode, LANGUAGES, type LanguageId } from '../server/runn
 import type { ChapterContent } from '../src/content/types'
 
 const args = process.argv.slice(2)
-const trackFilter = args.filter((a): a is LanguageId => (LANGUAGES as readonly string[]).includes(a))
-const chapterFilter = args.filter((a) => !trackFilter.includes(a as LanguageId))
-const tracks = trackFilter.length ? trackFilter : LANGUAGES
+const contentDir = join(import.meta.dirname, '../src/content')
+const allTracks = (await readdir(contentDir, { withFileTypes: true }))
+  .filter((e) => e.isDirectory())
+  .map((e) => e.name)
+  .sort()
+const isRunner = (t: string): t is LanguageId => (LANGUAGES as readonly string[]).includes(t)
+
+const trackFilter = args.filter((a) => allTracks.includes(a))
+const chapterFilter = args.filter((a) => !trackFilter.includes(a))
+const tracks = trackFilter.length ? trackFilter : allTracks
 
 let failures = 0
 let checked = 0
 for (const track of tracks) {
-  const dir = join(import.meta.dirname, '../src/content', track, 'chapters')
+  const dir = join(contentDir, track, 'chapters')
   const files = await readdir(dir).catch(() => [])
-  const runnable = files.filter((f) => f.endsWith('.ts')).sort()
+  const runnable = files.filter((f) => /^\d\d\.ts$/.test(f)).sort()
   if (runnable.length === 0) continue
 
+  if (!isRunner(track)) {
+    console.log(`⏭  ${track}: kein Runner (Schreiben & vergleichen), übersprungen`)
+    continue
+  }
   if (!(await isAvailable(track))) {
     console.log(`⏭  ${track}: Toolchain nicht installiert, übersprungen`)
     continue

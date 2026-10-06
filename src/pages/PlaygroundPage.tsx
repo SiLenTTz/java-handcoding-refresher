@@ -149,6 +149,95 @@ public static class Program
     }
 }
 `,
+  scl: `FUNCTION_BLOCK "Foerderband"
+VAR_INPUT
+    Start   : Bool;
+    Stopp   : Bool;   // Oeffner, im Ruhezustand TRUE
+    Stueck  : Bool;
+END_VAR
+VAR_OUTPUT
+    Motor   : Bool;
+    Fertig  : Bool;
+END_VAR
+VAR
+    Zaehler : Int;
+    Flanke  : Bool;
+END_VAR
+
+BEGIN
+    // Selbsthaltung mit vorrangigem Aus
+    Motor := (Start OR Motor) AND Stopp;
+
+    // Steigende Flanke am Stueckzaehler
+    IF Stueck AND NOT Flanke THEN
+        Zaehler := Zaehler + 1;
+    END_IF;
+    Flanke := Stueck;
+
+    CASE Zaehler OF
+        0..9:    Fertig := FALSE;
+        10:      Fertig := TRUE;
+    ELSE
+        Fertig := TRUE;
+    END_CASE;
+END_FUNCTION_BLOCK
+`,
+  awl: `// Selbsthaltung mit vorrangigem Aus
+      U(
+      U     "Start"       // E 0.0
+      O     "Motor"       // A 4.0
+      )
+      U     "Stopp"       // E 0.1, Oeffner
+      =     "Motor"
+
+// Stueckzaehler mit steigender Flanke
+      U     "Stueck"      // E 0.2
+      FP    "Flanke_M"    // M 10.0
+      SPBN  ende
+      L     "Zaehler"     // MW 12
+      L     1
+      +I
+      T     "Zaehler"
+ende: NOP   0
+`,
+  fup: `FUP – Netzwerk 1: Selbsthaltung mit vorrangigem Aus
+
+          +-------+              +-------+
+  Start --|       |              |       |
+          |  >=1  |--------------|   &   |------( )  Motor
+  Motor --|       |              |       |
+          +-------+      Stopp --|       |
+                                 +-------+
+
+Netzwerk 2: Stueckzaehler
+
+          +---------+            +-----------+
+  Stueck -| P_TRIG  |------------| CTU       |
+          | CLK   Q |            | CU      Q |----( )  Fertig
+          +---------+   "10" ----| PV     CV |----      Zaehler
+                                 +-----------+
+
+Legende:  &  = UND     >=1 = ODER     ( ) = Zuweisung
+`,
+  kop: `KOP – Netzwerk 1: Selbsthaltung mit vorrangigem Aus
+
+     Start      Stopp                 Motor
+  ----| |--+----|/|------------------( )----
+           |
+     Motor |
+  ----| |--+
+
+Netzwerk 2: Stueckzaehler mit Flanke
+
+     Stueck    Flanke_M          +--------+
+  ----| |------|P|--------------=| CTU    |
+                                 | CU   Q |----( )  Fertig
+                      "10" ------| PV  CV |----     Zaehler
+                                 +--------+
+
+Legende:  | |  = Schliesser     |/| = Oeffner
+          |P|  = steigende Flanke     ( ) = Spule
+`,
 }
 
 export function PlaygroundPage() {
@@ -190,25 +279,39 @@ function PlaygroundView({ track }: { track: TrackId }) {
     <div>
       <PageHeader
         title={`${trackData.icon} Playground`}
-        subtitle={`Freies ${trackData.label}. Dein Code läuft als eigenständiges Programm – schreib deinen eigenen Einstiegspunkt.`}
+        subtitle={
+          trackData.runnable
+            ? `Freies ${trackData.label}. Dein Code läuft als eigenständiges Programm – schreib deinen eigenen Einstiegspunkt.`
+            : `Freies ${trackData.label}. Dafür gibt es keinen lokalen Compiler – dieser Bereich ist dein Notizblock zum Formulieren von Hand.`
+        }
         actions={
           <>
             <Button variant="ghost" onClick={() => confirm('Beispielcode laden?') && setCode(example)}>
               ↺ Beispiel
             </Button>
-            <Button variant="primary" onClick={run} disabled={running}>
-              {running ? '⏳ Läuft…' : '▶ Ausführen'} <kbd className="hidden text-xs opacity-60 sm:inline">⌘↵</kbd>
-            </Button>
+            {trackData.runnable && (
+              <Button variant="primary" onClick={run} disabled={running}>
+                {running ? '⏳ Läuft…' : '▶ Ausführen'} <kbd className="hidden text-xs opacity-60 sm:inline">⌘↵</kbd>
+              </Button>
+            )}
           </>
         }
       />
-      <div className="grid gap-5 xl:grid-cols-[3fr_2fr]">
+      <div className={trackData.runnable ? 'grid gap-5 xl:grid-cols-[3fr_2fr]' : ''}>
         <div className="min-w-0">
-          <CodeEditor value={code} language={track} onChange={setCode} onRun={run} minHeight="clamp(280px,55vh,600px)" />
+          <CodeEditor
+            value={code}
+            language={track}
+            onChange={setCode}
+            onRun={trackData.runnable ? run : undefined}
+            minHeight="clamp(280px,55vh,600px)"
+          />
         </div>
-        <div className="min-w-0">
-          <RunResult result={result} error={error} />
-        </div>
+        {trackData.runnable && (
+          <div className="min-w-0">
+            <RunResult result={result} error={error} />
+          </div>
+        )}
       </div>
     </div>
   )
