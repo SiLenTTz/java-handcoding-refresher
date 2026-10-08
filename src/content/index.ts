@@ -2,7 +2,7 @@ import type { ChapterContent, ChapterMeta, Curriculum, Flashcard, Kata, QuizQues
 import { TRACKS, TRACK_IDS, type TrackId, type TrackMeta } from './tracks'
 
 const curriculumModules = import.meta.glob<{ default: Curriculum }>('./*/curriculum.ts', { eager: true })
-const contentModules = import.meta.glob<{ default: ChapterContent }>('./*/chapters/[0-9]*.ts', { eager: true })
+const contentModules = import.meta.glob<{ default: ChapterContent }>('./*/chapters/*.ts', { eager: true })
 const markdownFiles = import.meta.glob<string>('/docs/*/chapters/*.md', { query: '?raw', import: 'default', eager: true })
 const cheatsheetFiles = import.meta.glob<string>('/docs/*/cheatsheets/*.md', { query: '?raw', import: 'default', eager: true })
 
@@ -13,10 +13,11 @@ const trackOf = (path: string) => path.split('/').filter(Boolean)[path.startsWit
 
 const contentByTrack = new Map<TrackId, Map<string, ChapterContent>>()
 for (const [path, mod] of Object.entries(contentModules)) {
-  if (mod.default.id === '00') continue
+  const chapter = mod.default ?? mod
+  if (!chapter || (chapter as ChapterContent).id === '00') continue
   const track = trackOf(path)
   if (!contentByTrack.has(track)) contentByTrack.set(track, new Map())
-  contentByTrack.get(track)!.set(mod.default.id, mod.default)
+  contentByTrack.get(track)!.set((chapter as ChapterContent).id, chapter as ChapterContent)
 }
 
 export interface Chapter extends ChapterMeta {
